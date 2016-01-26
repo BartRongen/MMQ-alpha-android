@@ -1,1 +1,0 @@
-# MMQ-alpha-android

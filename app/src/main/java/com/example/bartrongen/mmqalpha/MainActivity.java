@@ -1,6 +1,7 @@
 package com.example.bartrongen.mmqalpha;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -39,6 +40,8 @@ public class MainActivity extends ActionBarActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object slug = slug_array.get(position);
                 setTitle(slug.toString());
+                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                startActivity(intent);
             }
         });
         new getData().execute();
