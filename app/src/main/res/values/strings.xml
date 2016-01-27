@@ -3,4 +3,6 @@
     <string name="title_activity_maps">Map</string>
     <string name="search">Search</string>
     <string name="failed">Failed to initialize Youtube Player</string>
+    <string name="broadcast_start">Start</string>
+    <string name="broadcast_stop">Stop</string>
 </resources>

@@ -40,7 +40,8 @@ public class MainActivity extends ActionBarActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object slug = slug_array.get(position);
                 setTitle(slug.toString());
-                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                Intent intent = new Intent(getApplicationContext(), PlayerActivity.class);
+                intent.putExtra("channel", slug.toString());
                 startActivity(intent);
             }
         });
@@ -49,60 +50,60 @@ public class MainActivity extends ActionBarActivity {
 
     class getData extends AsyncTask<String, String, String> {
 
-        HttpURLConnection urlConnection;
-        JSONObject jsonObject = new JSONObject();
+            HttpURLConnection urlConnection;
+            JSONObject jsonObject = new JSONObject();
 
-        @Override
-        protected String doInBackground(String... args) {
+            @Override
+            protected String doInBackground(String... args) {
 
-            StringBuilder result = new StringBuilder();
+                StringBuilder result = new StringBuilder();
 
-            try {
-                URL url = new URL("http://mmq.audio/channels");
-                urlConnection = (HttpURLConnection) url.openConnection();
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                try {
+                    URL url = new URL("http://mmq.audio/channels");
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+
+                }catch( Exception e) {
+                    e.printStackTrace();
+                }
+                finally {
+                    urlConnection.disconnect();
                 }
 
-            }catch( Exception e) {
-                e.printStackTrace();
-            }
-            finally {
-                urlConnection.disconnect();
+                return result.toString();
             }
 
-            return result.toString();
-        }
+            @Override
+            protected void onPostExecute(String result) {
 
-        @Override
-        protected void onPostExecute(String result) {
+                try {
+                    JSONObject jsonObject = new JSONObject(result.toString());
+                    JSONArray array = jsonObject.getJSONArray("channels");
+                    title_array = new ArrayList<String>();
+                    slug_array = new ArrayList<String>();
+                    for (int i=0; i<array.length(); i++){
+                        JSONObject temp = (JSONObject) array.get(i);
+                        title_array.add(temp.getString("title"));
+                        slug_array.add(temp.getString("slug"));
+                    }
+                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
+                            context,
+                            android.R.layout.simple_list_item_1,
+                            title_array);
 
-            try {
-                JSONObject jsonObject = new JSONObject(result.toString());
-                JSONArray array = jsonObject.getJSONArray("channels");
-                title_array = new ArrayList<String>();
-                slug_array = new ArrayList<String>();
-                for (int i=0; i<array.length(); i++){
-                    JSONObject temp = (JSONObject) array.get(i);
-                    title_array.add(temp.getString("title"));
-                    slug_array.add(temp.getString("slug"));
+                    lv.setAdapter(arrayAdapter);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
-                        context,
-                        android.R.layout.simple_list_item_1,
-                        title_array);
-
-                lv.setAdapter(arrayAdapter);
-
-            } catch (JSONException e) {
-                e.printStackTrace();
             }
-        }
     }
 }
 

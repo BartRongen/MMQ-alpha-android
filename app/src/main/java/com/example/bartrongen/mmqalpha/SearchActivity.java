@@ -1,9 +1,11 @@
 package com.example.bartrongen.mmqalpha;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +24,7 @@ import java.util.List;
 /**
  * Created by Bart Rongen on 26-1-2016.
  */
-public class SearchActivity extends ActionBarActivity {
+public class SearchActivity extends Activity {
 
     private EditText searchInput;
     private ListView videosFound;
@@ -34,7 +36,17 @@ public class SearchActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
-        setTitle("Searcher");
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        int width = dm.widthPixels;
+        int height = dm.widthPixels;
+        double w = width*.8;
+        double h = height*1.2;
+
+        getWindow().setLayout((int) w, (int) h);
+
+        //setTitle("Searcher");
 
         searchInput = (EditText)findViewById(R.id.search_input);
         videosFound = (ListView)findViewById(R.id.videos_found);
