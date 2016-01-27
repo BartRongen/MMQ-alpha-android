@@ -30,7 +30,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     @Override
     public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player, boolean restored) {
         if(!restored){
-            player.cueVideo(getIntent().getStringExtra("VIDEO_ID"));
+            player.loadVideo(getIntent().getStringExtra("VIDEO_ID"));
         }
     }
 
