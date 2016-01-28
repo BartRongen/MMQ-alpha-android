@@ -16,14 +16,8 @@
         android:title="Pause"
         android:icon="@drawable/ic_pause_white_24dp" />
     <item
-        android:id="@+id/add_to_broadcast"
-        android:orderInCategory="3"
-        app:showAsAction="always"
-        android:title="Add"
-        android:icon="@drawable/ic_add_white_24dp" />
-    <item
         android:id="@+id/refresh"
-        android:orderInCategory="4"
+        android:orderInCategory="3"
         app:showAsAction="always"
         android:title="Refresh"
         android:icon="@drawable/ic_refresh_white_24dp" />
