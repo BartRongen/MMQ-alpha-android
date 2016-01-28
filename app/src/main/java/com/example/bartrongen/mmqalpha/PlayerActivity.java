@@ -13,6 +13,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -63,13 +64,13 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     Context context = this;
     List<String> video_code_array, video_title_array;
     YouTubePlayer player;
-    boolean fix = true;
     Toolbar mToolbar;
     ArrayAdapter<String> arrayAdapter;
     String currentTitle;
     Handler handler;
     private List<VideoItem> searchResults;
     ArrayAdapter<VideoItem> adapter;
+    boolean startOnStop = true;
 
     //injecting views
     @InjectView(R.id.now_playing) TextView now_playing;
@@ -93,7 +94,15 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         ButterKnife.inject(this);
         //search handler
         handler = new Handler();
+        //add listeners
+        addEditorListener();
+        addClickListener();
+        //run initial api call
+        new getUpcoming().execute();
+    }
 
+
+    private void addEditorListener() {
         searchInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -109,9 +118,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
                 return true;
             }
         });
-        addClickListener();
-        //run initial api call
-        new getUpcoming().execute();
     }
 
     private void loseFocus(){
@@ -174,7 +180,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     @Override
     public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player_local, boolean restored) {
         if(!restored){
-            //player.loadVideo(getIntent().getStringExtra("VIDEO_ID"));
             player = player_local;
             player.setPlaybackEventListener(this);
             player.loadVideo(video_code_array.get(0));
@@ -242,6 +247,23 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         arrayAdapter.notifyDataSetChanged();
     }
 
+    public void onUpcomingClick(View v) {
+        LinearLayout vwParentRow = (LinearLayout) v.getParent();
+        int i = lv_upcoming.getPositionForView(vwParentRow);
+        if (player != null) {
+            //fix so that a new video doesn't get played by onStopped()
+            startOnStop = false;
+            player.loadVideo(video_code_array.get(i));
+            currentTitle = video_title_array.get(i);
+            now_playing.setText("Now playing: " + currentTitle);
+            video_code_array.remove(i);
+            video_title_array.remove(i);
+            arrayAdapter.notifyDataSetChanged();
+        } else {
+            Toast.makeText(this, "Start broadcast first", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public void onPlaying() {
 
@@ -255,10 +277,10 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     @Override
     public void onStopped() {
         //fix for the 2-loop
-        if (fix){
+        if (startOnStop){
             //remove last played and starts next
             Log.d("YC", "set fix to false");
-            fix = false;
+            startOnStop = false;
             player.loadVideo(video_code_array.get(0));
             currentTitle = video_title_array.get(0);
             now_playing.setText("Now playing: " + currentTitle);
@@ -267,7 +289,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             arrayAdapter.notifyDataSetChanged();
         } else {
             Log.d("YC", "set fix to true");
-            fix = true;
+            startOnStop = true;
         }
     }
 
@@ -280,7 +302,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     public void onSeekTo(int i) {
 
     }
-
 
     class getUpcoming extends AsyncTask<String, String, String> {
 
