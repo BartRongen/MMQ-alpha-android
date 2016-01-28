@@ -115,8 +115,10 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     }
 
     private void loseFocus(){
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(), 0);
+        } catch (NullPointerException e){}
     }
 
     private void searchOnYoutube(final String keywords){
