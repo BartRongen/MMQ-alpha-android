@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -30,6 +31,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.StringRequest;
@@ -59,9 +61,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -71,6 +75,7 @@ public class MainActivity extends ActionBarActivity {
     List<String> title_array, slug_array;
     EditText dialogText;
     String channelTitle;
+    Map<String, String> params;
 
     @InjectView(R.id.listView) ListView lv;
 
@@ -91,6 +96,71 @@ public class MainActivity extends ActionBarActivity {
         });
         new getData().execute();
 
+        params = new Map<String, String>() {
+            @Override
+            public void clear() {
+
+            }
+
+            @Override
+            public boolean containsKey(Object key) {
+                return false;
+            }
+
+            @Override
+            public boolean containsValue(Object value) {
+                return false;
+            }
+
+            @NonNull
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return null;
+            }
+
+            @Override
+            public String get(Object key) {
+                return null;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+
+            @NonNull
+            @Override
+            public Set<String> keySet() {
+                return null;
+            }
+
+            @Override
+            public String put(String key, String value) {
+                return null;
+            }
+
+            @Override
+            public void putAll(Map<? extends String, ? extends String> map) {
+
+            }
+
+            @Override
+            public String remove(Object key) {
+                return null;
+            }
+
+            @Override
+            public int size() {
+                return 0;
+            }
+
+            @NonNull
+            @Override
+            public Collection<String> values() {
+                return null;
+            }
+        };
+
 
         RequestQueue queue = Volley.newRequestQueue(this);
         String url ="http://mmq.audio/channels";
@@ -101,7 +171,8 @@ public class MainActivity extends ActionBarActivity {
 
                     @Override
                     public void onResponse(JSONObject response) {
-                        getActionBar().setTitle("Response: " + response.toString());
+                        //getActionBar().setTitle("Response: " + response.toString());
+                        channelTitle = "test";
                     }
                 }, new Response.ErrorListener() {
 
@@ -185,6 +256,32 @@ public class MainActivity extends ActionBarActivity {
     public void postThatShit(String name){
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "http://mmq.audio/add";
+        params.put("title", name.toString());
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("title", name);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                //getActionBar().setTitle("Response: " + response.toString());
+                channelTitle = "test";
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+                channelTitle = error.networkResponse.toString();
+
+            }
+        });
+
+        queue.add(req);
     }
 
 
