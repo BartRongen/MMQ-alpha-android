@@ -6,9 +6,11 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,6 +26,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.JsonRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.api.client.http.HttpResponse;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,18 +48,29 @@ import butterknife.Optional;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
 
 
 public class MainActivity extends ActionBarActivity {
     Context context = this;
     List<String> title_array, slug_array;
     EditText dialogText;
+    String channelTitle;
 
     @InjectView(R.id.listView) ListView lv;
 
@@ -67,6 +90,29 @@ public class MainActivity extends ActionBarActivity {
             }
         });
         new getData().execute();
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url ="http://mmq.audio/channels";
+
+
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        getActionBar().setTitle("Response: " + response.toString());
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
+
+        queue.add(jsObjRequest);
     }
 
     @Override
@@ -99,9 +145,10 @@ public class MainActivity extends ActionBarActivity {
                 setPositiveButton("Add", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(final DialogInterface dialog, final int which) {
-                        String value = input.getText().toString().trim();
-                        Toast.makeText(getApplicationContext(), value,
+                        channelTitle = input.getText().toString().trim();
+                        Toast.makeText(getApplicationContext(), channelTitle,
                                 Toast.LENGTH_SHORT).show();
+                        postThatShit(channelTitle);
                         dialog.dismiss();
                     }
                 }).
@@ -115,25 +162,141 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    String value = input.getText().toString().trim();
-                    Toast.makeText(getApplicationContext(), value,
+                    channelTitle = input.getText().toString().trim();
+                    Toast.makeText(getApplicationContext(), channelTitle,
                             Toast.LENGTH_SHORT).show();
+                    postThatShit(channelTitle);
                     dlg.dismiss();
                     return false;
                 }
                 return true;
             }
         });
-        dlg.setOnShowListener(new DialogInterface.OnShowListener()
-        {
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
-            public void onShow(final DialogInterface dialog)
-            {
+            public void onShow(final DialogInterface dialog) {
                 input.requestFocus();
                 ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(input, 0);
             }
         });
         dlg.show();
+    }
+
+    public void postThatShit(String name){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://mmq.audio/add";
+    }
+
+
+    class postChannel extends AsyncTask<String, String, String> {
+        @Override
+        protected String doInBackground(String... args) {
+
+            Map<String,String> titleMap = new HashMap<>();
+            //titleMap.put("title", channelTitle);
+            titleMap.put("city", "android_test");
+            titleMap.put("review", "android_test");
+
+            String encodedTitle = getEncodedData(titleMap);
+
+            BufferedReader reader = null;
+
+            try {
+                //URL url = new URL("http://mmq.audio/add");
+                URL url = new URL("http://2id60.win.tue.nl:2345/reviews");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(15000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+
+                writer.write("city=android_test&review=android_test&email=android_test");
+                writer.flush();
+                writer.close();
+                os.close();
+                int responseCode = conn.getResponseCode();
+
+                Log.i("code", String.valueOf(responseCode));
+
+                /*
+                StringBuilder sb = new StringBuilder();
+                reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                String line;
+                while ((line = reader.readLine()) != null){
+                    sb.append(line + "\n");
+                }
+                line = sb.toString();
+
+                Log.i("custom_check", "The values received in the store part are as follows:");
+                Log.i("custom_check",line);
+                */
+            } catch (IOException e){
+                e.printStackTrace();
+
+            } finally {
+                if (reader != null){
+                    try{
+                        reader.close();
+                    } catch (IOException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return "true";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+        }
+    }
+
+    private String getEncodedData(Map<String,String> data) {
+        StringBuilder sb = new StringBuilder();
+        for(String key : data.keySet()) {
+            String value = null;
+            try {
+                key = URLEncoder.encode(key, "UTF-8");
+                value = URLEncoder.encode(data.get(key), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            if(sb.length()>0)
+                sb.append("&");
+
+            sb.append(key + "=" + value);
+        }
+        return sb.toString();
+    }
+
+    void postChannel(String channelTitle) throws IOException {
+        URL url = new URL("http://mmq.audio/add");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(15000);
+        conn.setRequestMethod("POST");
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+
+        Uri.Builder builder = new Uri.Builder()
+                .appendQueryParameter("title", channelTitle);
+        String query = builder.build().getEncodedQuery();
+
+        OutputStream os = conn.getOutputStream();
+        BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(os, "UTF-8"));
+        writer.write(query);
+        writer.flush();
+        writer.close();
+        os.close();
+
+        conn.connect();
     }
 
     class getData extends AsyncTask<String, String, String> {

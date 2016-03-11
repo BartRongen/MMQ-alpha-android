@@ -1,10 +1,13 @@
 package com.example.bartrongen.mmqalpha;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -53,8 +56,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Bart Rongen on 26-1-2016.
@@ -71,6 +77,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     private List<VideoItem> searchResults;
     ArrayAdapter<VideoItem> adapter;
     boolean startOnStop = true;
+    private Timer myTimer;
 
     //injecting views
     @InjectView(R.id.now_playing) TextView now_playing;
@@ -97,8 +104,15 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         //add listeners
         addEditorListener();
         addClickListener();
-        //run initial api call
-        new getUpcoming().execute();
+        //timer for api call, every 10 s
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                new getUpcoming().execute();
+            }
+
+        }, 0, 10000);
     }
 
 

@@ -18,8 +18,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddChannel"
-            android:theme="@style/AppTheme.AddChannelPopTheme"/>
         <activity android:name=".PlayerActivity"
             android:windowSoftInputMode="adjustPan"
             android:screenOrientation="portrait"/>
