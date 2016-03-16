@@ -32,6 +32,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
@@ -109,10 +115,79 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         myTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                new getUpcoming().execute();
+                getUpcoming();
             }
 
         }, 0, 10000);
+    }
+
+    private void getUpcoming() {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url ="http://mmq.audio/" + getIntent().getStringExtra("channel") + "/upcoming";
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONArray array = response.getJSONArray("upcoming");
+                    video_code_array = new ArrayList<String>();
+                    video_title_array = new ArrayList<String>();
+                    for (int i=0; i<array.length(); i++){
+                        JSONObject temp = (JSONObject) array.get(i);
+                        video_code_array.add(temp.getString("code"));
+                        video_title_array.add(temp.getString("title"));
+                    }
+
+                    arrayAdapter = new ArrayAdapter<String>(
+                            context,
+                            R.layout.broadcast_list_item,
+                            R.id.broadcast_title,
+                            video_title_array);
+
+                    lv_upcoming.setAdapter(arrayAdapter);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+
+            }
+        });
+
+        queue.add(req);
+    }
+
+    private void postVideo(String id) {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/add";
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("id", id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                //getActionBar().setTitle("Response: " + response.toString());
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+
+            }
+        });
+
+        queue.add(req);
     }
 
 
@@ -187,6 +262,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
                 video_code_array.add(searchResults.get(pos).getId());
                 video_title_array.add(searchResults.get(pos).getTitle());
                 arrayAdapter.notifyDataSetChanged();
+                postVideo(searchResults.get(pos).getId());
             }
         });
     }
@@ -230,7 +306,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     @OnClick(R.id.refresh)
     public void refresh(View v){
-        new getUpcoming().execute();
+        getUpcoming();
     }
 
     @OnClick(R.id.tv_upcoming)
@@ -315,64 +391,5 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     @Override
     public void onSeekTo(int i) {
 
-    }
-
-    class getUpcoming extends AsyncTask<String, String, String> {
-
-        HttpURLConnection urlConnection;
-        JSONObject jsonObject = new JSONObject();
-
-        @Override
-        protected String doInBackground(String... args) {
-
-            StringBuilder result = new StringBuilder();
-
-            try {
-                URL url = new URL("http://mmq.audio/" + getIntent().getStringExtra("channel") + "/upcoming");
-                urlConnection = (HttpURLConnection) url.openConnection();
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
-                }
-
-            }catch( Exception e) {
-                e.printStackTrace();
-            }
-            finally {
-                urlConnection.disconnect();
-            }
-
-            return result.toString();
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-
-            try {
-                JSONObject jsonObject = new JSONObject(result.toString());
-                JSONArray array = jsonObject.getJSONArray("upcoming");
-                video_code_array = new ArrayList<String>();
-                video_title_array = new ArrayList<String>();
-                for (int i=0; i<array.length(); i++){
-                    JSONObject temp = (JSONObject) array.get(i);
-                    video_code_array.add(temp.getString("code"));
-                    video_title_array.add(temp.getString("title"));
-                }
-
-                arrayAdapter = new ArrayAdapter<String>(
-                        context,
-                        R.layout.broadcast_list_item,
-                        R.id.broadcast_title,
-                        video_title_array);
-
-                lv_upcoming.setAdapter(arrayAdapter);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
