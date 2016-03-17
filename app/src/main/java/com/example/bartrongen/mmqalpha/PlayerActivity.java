@@ -75,10 +75,13 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     Context context = this;
     List<String> video_code_array, video_title_array;
+    List<Integer> video_r_id_array;
     YouTubePlayer player;
     Toolbar mToolbar;
     ArrayAdapter<String> arrayAdapter;
     String currentTitle;
+    String currentId;
+    Integer currentR_id;
     Handler handler;
     private List<VideoItem> searchResults;
     ArrayAdapter<VideoItem> adapter;
@@ -110,12 +113,13 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         //add listeners
         addEditorListener();
         addClickListener();
+        getUpcoming();
         //timer for api call, every 10 s
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                getUpcoming();
+                //getUpcoming();
             }
 
         }, 0, 10000);
@@ -133,10 +137,12 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
                     JSONArray array = response.getJSONArray("upcoming");
                     video_code_array = new ArrayList<String>();
                     video_title_array = new ArrayList<String>();
+                    video_r_id_array = new ArrayList<Integer>();
                     for (int i=0; i<array.length(); i++){
                         JSONObject temp = (JSONObject) array.get(i);
                         video_code_array.add(temp.getString("code"));
                         video_title_array.add(temp.getString("title"));
+                        video_r_id_array.add(temp.getInt("r_id"));
                     }
 
                     arrayAdapter = new ArrayAdapter<String>(
@@ -162,12 +168,14 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         queue.add(req);
     }
 
-    private void postVideo(String id) {
+    private void postVideo(String id, String title) {
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/add";
         JSONObject obj = new JSONObject();
         try {
             obj.put("id", id);
+            obj.put("title", title);
+            obj.put("duration", "180");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -188,6 +196,66 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         });
 
         queue.add(req);
+        getUpcoming();
+    }
+
+    private void removeLastPlayed(Integer r_id) {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/finish";
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("id", r_id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                //getActionBar().setTitle("Response: " + response.toString());
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+                error.getCause();
+
+            }
+        });
+
+        queue.add(req);
+        getUpcoming();
+    }
+
+    private void removeWithoutPlaying(Integer r_id) {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/remove";
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("id", r_id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                //getActionBar().setTitle("Response: " + response.toString());
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+            }
+        });
+
+        queue.add(req);
+        //no get request needed
+        //getUpcoming();
     }
 
 
@@ -259,10 +327,10 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             public void onItemClick(AdapterView<?> av, View v, int pos,
                                     long id) {
                 Toast.makeText(context, "Added video to the list", Toast.LENGTH_SHORT).show();
-                video_code_array.add(searchResults.get(pos).getId());
-                video_title_array.add(searchResults.get(pos).getTitle());
+                //video_code_array.add(searchResults.get(pos).getId());
+                //video_title_array.add(searchResults.get(pos).getTitle());
                 arrayAdapter.notifyDataSetChanged();
-                postVideo(searchResults.get(pos).getId());
+                postVideo(searchResults.get(pos).getId(), searchResults.get(pos).getTitle());
             }
         });
     }
@@ -274,10 +342,14 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             player.setPlaybackEventListener(this);
             player.loadVideo(video_code_array.get(0));
             currentTitle = video_title_array.get(0);
+            currentId = video_code_array.get(0);
+            currentR_id = video_r_id_array.get(0);
             now_playing.setText("Now playing: " + currentTitle);
             video_code_array.remove(0);
             video_title_array.remove(0);
+            video_r_id_array.remove(0);
             arrayAdapter.notifyDataSetChanged();
+            //removeLastPlayed(currentR_id);
         }
     }
 
@@ -332,9 +404,11 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     public void removeFromBroadcastList(View v) {
         LinearLayout vwParentRow = (LinearLayout)v.getParent();
         int i = lv_upcoming.getPositionForView(vwParentRow);
+        Integer r_idForRemove = video_r_id_array.get(i);
         video_code_array.remove(i);
         video_title_array.remove(i);
         arrayAdapter.notifyDataSetChanged();
+        removeWithoutPlaying(r_idForRemove);
     }
 
     public void onUpcomingClick(View v) {
@@ -345,10 +419,14 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             startOnStop = false;
             player.loadVideo(video_code_array.get(i));
             currentTitle = video_title_array.get(i);
+            currentId = video_code_array.get(i);
+            currentR_id = video_r_id_array.get(i);
             now_playing.setText("Now playing: " + currentTitle);
             video_code_array.remove(i);
             video_title_array.remove(i);
+            video_r_id_array.remove(i);
             arrayAdapter.notifyDataSetChanged();
+            removeLastPlayed(currentR_id);
         } else {
             Toast.makeText(this, "Start broadcast first", Toast.LENGTH_SHORT).show();
         }
@@ -373,10 +451,14 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             startOnStop = false;
             player.loadVideo(video_code_array.get(0));
             currentTitle = video_title_array.get(0);
+            currentId = video_code_array.get(0);
+            currentR_id = video_r_id_array.get(0);
             now_playing.setText("Now playing: " + currentTitle);
             video_code_array.remove(0);
             video_title_array.remove(0);
+            video_r_id_array.remove(0);
             arrayAdapter.notifyDataSetChanged();
+            //removeLastPlayed(currentR_id);
         } else {
             Log.d("YC", "set fix to true");
             startOnStop = true;
