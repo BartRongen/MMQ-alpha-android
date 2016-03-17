@@ -85,7 +85,8 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     Handler handler;
     private List<VideoItem> searchResults;
     ArrayAdapter<VideoItem> adapter;
-    boolean startOnStop = true;
+    boolean startOnStop = false;
+    Integer fixcount = 2;
     private Timer myTimer;
 
     //injecting views
@@ -196,7 +197,12 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         });
 
         queue.add(req);
-        getUpcoming();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                getUpcoming();
+            }
+        }, 2000);
     }
 
     private void removeLastPlayed(Integer r_id) {
@@ -226,7 +232,11 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         });
 
         queue.add(req);
-        getUpcoming();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                getUpcoming();
+            }
+        }, 2000);
     }
 
     private void removeWithoutPlaying(Integer r_id) {
@@ -255,7 +265,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
         queue.add(req);
         //no get request needed
-        //getUpcoming();
     }
 
 
@@ -337,7 +346,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     @Override
     public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player_local, boolean restored) {
-        if(!restored){
+        if (!restored){
             player = player_local;
             player.setPlaybackEventListener(this);
             player.loadVideo(video_code_array.get(0));
@@ -349,7 +358,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             video_title_array.remove(0);
             video_r_id_array.remove(0);
             arrayAdapter.notifyDataSetChanged();
-            //removeLastPlayed(currentR_id);
+            removeLastPlayed(currentR_id);
         }
     }
 
@@ -458,10 +467,15 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             video_title_array.remove(0);
             video_r_id_array.remove(0);
             arrayAdapter.notifyDataSetChanged();
-            //removeLastPlayed(currentR_id);
+            removeLastPlayed(currentR_id);
         } else {
-            Log.d("YC", "set fix to true");
-            startOnStop = true;
+            if (fixcount == 2) {
+                Log.d("YC", "set fix to true");
+                startOnStop = true;
+                fixcount = 0;
+            } else {
+                fixcount++;
+            }
         }
     }
 
