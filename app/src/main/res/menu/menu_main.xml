@@ -21,4 +21,10 @@
         app:showAsAction="always"
         android:title="Refresh"
         android:icon="@drawable/ic_refresh_white_24dp" />
+    <item
+        android:id="@+id/toot"
+        android:orderInCategory="4"
+        app:showAsAction="always"
+        android:title="Toot"
+        android:icon="@drawable/ic_play_arrow_black_24dp" />
 </menu>

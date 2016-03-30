@@ -37,6 +37,9 @@ import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.api.client.http.HttpResponse;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,6 +50,8 @@ import butterknife.InjectView;
 
 import butterknife.OnClick;
 import butterknife.Optional;
+import retrofit2.Call;
+import retrofit2.Callback;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -130,7 +135,7 @@ public class MainActivity extends ActionBarActivity {
                         channelTitle = input.getText().toString().trim();
                         Toast.makeText(getApplicationContext(), channelTitle,
                                 Toast.LENGTH_SHORT).show();
-                        postThatShit(channelTitle);
+                        addNewChannel(channelTitle);
                         dialog.dismiss();
                     }
                 }).
@@ -147,7 +152,7 @@ public class MainActivity extends ActionBarActivity {
                     channelTitle = input.getText().toString().trim();
                     Toast.makeText(getApplicationContext(), channelTitle,
                             Toast.LENGTH_SHORT).show();
-                    postThatShit(channelTitle);
+                    addNewChannel(channelTitle);
                     dlg.dismiss();
                     Intent intent = new Intent(getApplicationContext(), PlayerActivity.class);
                     intent.putExtra("channel", channelTitle);
@@ -168,77 +173,43 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void getChannels() {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://mmq.audio/channels";
-
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
-
+        API.getService().getChannels().enqueue(new Callback<JsonElement>() {
             @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    JSONArray array = response.getJSONArray("channels");
-                    title_array = new ArrayList<String>();
-                    slug_array = new ArrayList<String>();
-                    for (int i=0; i<array.length(); i++){
-                        JSONObject temp = null;
-                        try {
-                            temp = (JSONObject) array.get(i);
-                            title_array.add(temp.getString("title"));
-                            slug_array.add(temp.getString("slug"));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
-                            context,
-                            android.R.layout.simple_list_item_1,
-                            title_array);
-
-                    lv.setAdapter(arrayAdapter);
-                } catch (JSONException e) {
-                    e.printStackTrace();
+            public void onResponse(Call<JsonElement> call, retrofit2.Response<JsonElement> response) {
+                JsonArray array = response.body().getAsJsonObject().get("channels").getAsJsonArray();
+                title_array = new ArrayList<String>();
+                slug_array = new ArrayList<String>();
+                for (int i=0; i<array.size(); i++){
+                    JsonObject temp = null;
+                    temp = (JsonObject) array.get(i).getAsJsonObject();
+                    title_array.add(temp.get("title").getAsString());
+                    slug_array.add(temp.get("slug").getAsString());
                 }
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
+                        context,
+                        android.R.layout.simple_list_item_1,
+                        title_array);
+                lv.setAdapter(arrayAdapter);
             }
-        }, new Response.ErrorListener() {
 
             @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
+            public void onFailure(Call<JsonElement> call, Throwable t) {
 
             }
         });
-
-        queue.add(req);
     }
 
-    private void postThatShit(String name){
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://mmq.audio/add";
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("title", name);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+    private void addNewChannel(String name){
+        HashMap<String, String>  map = new HashMap<>();
+        map.put("title", name);
 
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
+        API.getService().addNewChannel(map).enqueue(new Callback<JsonElement>() {
+            @Override
+            public void onResponse(Call<JsonElement> call, retrofit2.Response<JsonElement> response) {}
 
             @Override
-            public void onResponse(JSONObject response) {
-                //getActionBar().setTitle("Response: " + response.toString());
-                channelTitle = "test";
-            }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-                //channelTitle = error.networkResponse.toString();
-
-            }
+            public void onFailure(Call<JsonElement> call, Throwable t) {}
         });
-
-        queue.add(req);
     }
 }
 

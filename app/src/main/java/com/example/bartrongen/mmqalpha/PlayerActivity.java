@@ -87,7 +87,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     ArrayAdapter<VideoItem> adapter;
     boolean startOnStop = false;
     Integer fixcount = 2;
-    private Timer myTimer;
 
     //injecting views
     @InjectView(R.id.now_playing) TextView now_playing;
@@ -115,15 +114,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         addEditorListener();
         addClickListener();
         getUpcoming();
-        //timer for api call, every 10 s
-        myTimer = new Timer();
-        myTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                //getUpcoming();
-            }
-
-        }, 0, 10000);
     }
 
     private void getUpcoming() {
@@ -202,7 +192,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             public void run() {
                 getUpcoming();
             }
-        }, 2000);
+        }, 500);
     }
 
     private void removeLastPlayed(Integer r_id) {
@@ -236,7 +226,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
             public void run() {
                 getUpcoming();
             }
-        }, 2000);
+        }, 500);
     }
 
     private void removeWithoutPlaying(Integer r_id) {
@@ -264,7 +254,11 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         });
 
         queue.add(req);
-        //no get request needed
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                getUpcoming();
+            }
+        }, 500);
     }
 
 
@@ -348,6 +342,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player_local, boolean restored) {
         if (!restored){
             player = player_local;
+            player.setPlayerStyle(YouTubePlayer.PlayerStyle.MINIMAL);
             player.setPlaybackEventListener(this);
             player.loadVideo(video_code_array.get(0));
             currentTitle = video_title_array.get(0);
@@ -369,7 +364,9 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     @OnClick(R.id.broadcast_start)
     public void broadcastStart(View v){
-        if (player == null){
+        if (video_code_array == null) {
+            Toast.makeText(context, "Add a video to the list first", Toast.LENGTH_SHORT).show();
+        } else if (player == null){
             playerView.initialize(YoutubeConnector.KEY, this);
         } else {
             player.play();
@@ -388,6 +385,28 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     @OnClick(R.id.refresh)
     public void refresh(View v){
         getUpcoming();
+    }
+
+    @OnClick(R.id.toot)
+    public void toot(View v){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/send/update";
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                //getActionBar().setTitle("Response: " + response.toString());
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO Auto-generated method stub
+            }
+        });
+
+        queue.add(req);
     }
 
     @OnClick(R.id.tv_upcoming)
