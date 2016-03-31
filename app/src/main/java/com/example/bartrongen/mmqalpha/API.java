@@ -30,6 +30,7 @@ public class API {
     public static final String POST_VIDEO = "{channel}/add";
     public static final String VIDEO_FINISH = "{channel}/finish";
     public static final String VIDEO_REMOVE = "{channel}/remove";
+    public static final String TOOT = "{channel}/send/update";
 
     public interface MMQApi{
         @GET(CHANNELS)
@@ -49,6 +50,9 @@ public class API {
 
         @POST(VIDEO_REMOVE)
         Call<JsonElement> removeWithoutPlaying(@Path("channel") String channel, @Body HashMap<String, Integer> body);
+
+        @GET(TOOT)
+        Call<JsonElement> toot(@Path("channel") String channel);
     }
 
     private static MMQApi MMQSERVICE;

@@ -1,29 +1,21 @@
 package com.example.bartrongen.mmqalpha;
 
-import android.app.Service;
 import android.content.Context;
-import android.content.Intent;
-import android.os.AsyncTask;
-import android.os.Binder;
+import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MotionEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -31,13 +23,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
@@ -47,32 +32,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 import butterknife.OnClick;
-import butterknife.Optional;
 import retrofit2.Call;
 import retrofit2.Callback;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOError;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+
 
 /**
  * Created by Bart Rongen on 26-1-2016.
@@ -93,6 +63,9 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     ArrayAdapter<VideoItem> adapter;
     boolean startOnStop = false;
     Integer fixcount = 2;
+    int easteregg = 0;
+    ActionMenuItemView toot;
+    boolean eastereggactive = false;
 
     //injecting views
     @InjectView(R.id.now_playing) TextView now_playing;
@@ -111,6 +84,9 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
         mToolbar = (Toolbar) findViewById(R.id.mtoolbar);
         mToolbar.setTitle(getIntent().getStringExtra("channel"));
         mToolbar.inflateMenu(R.menu.menu_main);
+        //easteregg
+        toot = (ActionMenuItemView) findViewById(R.id.toot);
+
         mToolbar.setTitleTextColor(-1);
         //inject ButterKnife for onclick methods and views
         ButterKnife.inject(this);
@@ -123,9 +99,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     }
 
     private void getUpcoming() {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://mmq.audio/" + getIntent().getStringExtra("channel") + "/upcoming";
-
         API.getService().getUpcoming(getIntent().getStringExtra("channel")).enqueue(new Callback<JsonElement>() {
             @Override
             public void onResponse(Call<JsonElement> call, retrofit2.Response<JsonElement> response) {
@@ -133,7 +106,7 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
                 video_code_array = new ArrayList<String>();
                 video_title_array = new ArrayList<String>();
                 video_r_id_array = new ArrayList<Integer>();
-                for (int i=0; i<array.size(); i++){
+                for (int i = 0; i < array.size(); i++) {
                     JsonObject temp = array.get(i).getAsJsonObject();
                     video_code_array.add(temp.get("code").getAsString());
                     video_title_array.add(temp.get("title").getAsString());
@@ -153,60 +126,9 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
             }
         });
-
-        /*
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
-
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    JSONArray array = response.getJSONArray("upcoming");
-                    video_code_array = new ArrayList<String>();
-                    video_title_array = new ArrayList<String>();
-                    video_r_id_array = new ArrayList<Integer>();
-                    for (int i=0; i<array.length(); i++){
-                        JSONObject temp = (JSONObject) array.get(i);
-                        video_code_array.add(temp.getString("code"));
-                        video_title_array.add(temp.getString("title"));
-                        video_r_id_array.add(temp.getInt("r_id"));
-                    }
-
-                    arrayAdapter = new ArrayAdapter<String>(
-                            context,
-                            R.layout.broadcast_list_item,
-                            R.id.broadcast_title,
-                            video_title_array);
-
-                    lv_upcoming.setAdapter(arrayAdapter);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-
-            }
-        });
-
-        queue.add(req);
-        */
     }
 
     private void postVideo(String id, String title) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/add";
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("id", id);
-            obj.put("title", title);
-            obj.put("duration", "180");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
         HashMap<String, String> map = new HashMap<>();
         map.put("id", id);
         map.put("title", title);
@@ -223,26 +145,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
             }
         });
-
-        /*
-
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
-
-            @Override
-            public void onResponse(JSONObject response) {
-                //getActionBar().setTitle("Response: " + response.toString());
-            }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-
-            }
-        });
-
-        queue.add(req);
-        */
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             public void run() {
@@ -252,32 +154,20 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     }
 
     private void removeLastPlayed(Integer r_id) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/finish";
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("id", r_id);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        HashMap<String, Integer> map = new HashMap<>();
+        map.put("id", r_id);
 
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
-
+        API.getService().removeLastPlayed(getIntent().getStringExtra("channel"), map).enqueue(new Callback<JsonElement>() {
             @Override
-            public void onResponse(JSONObject response) {
-                //getActionBar().setTitle("Response: " + response.toString());
+            public void onResponse(Call<JsonElement> call, retrofit2.Response<JsonElement> response) {
+
             }
-        }, new Response.ErrorListener() {
 
             @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-                error.getCause();
+            public void onFailure(Call<JsonElement> call, Throwable t) {
 
             }
         });
-
-        queue.add(req);
         handler.postDelayed(new Runnable() {
             public void run() {
                 getUpcoming();
@@ -286,15 +176,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
     }
 
     private void removeWithoutPlaying(Integer r_id) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/remove";
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("id", r_id);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
         HashMap<String, Integer> map = new HashMap<>();
         map.put("id", r_id);
 
@@ -309,24 +190,6 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
             }
         });
-
-        /*
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, url, obj, new Response.Listener<JSONObject>() {
-
-            @Override
-            public void onResponse(JSONObject response) {
-                //getActionBar().setTitle("Response: " + response.toString());
-            }
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        queue.add(req);
-        */
         handler.postDelayed(new Runnable() {
             public void run() {
                 getUpcoming();
@@ -457,29 +320,36 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     @OnClick(R.id.refresh)
     public void refresh(View v){
+        if (eastereggactive) {
+            toot.setIcon(getDrawable(R.drawable.ic_volume_off_white_24dp));
+            eastereggactive = false;
+            easteregg = 0;
+        } else if (easteregg < 2){
+            easteregg++;
+        } else if (easteregg == 4 ){
+            toot.setIcon(getDrawable(R.drawable.ic_volume_up_white_24dp));
+            eastereggactive = true;
+        } else {
+            easteregg = 0;
+        }
         getUpcoming();
     }
 
     @OnClick(R.id.toot)
     public void toot(View v){
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://mmq.audio/" + getIntent().getStringExtra("channel") + "/send/update";
+        if (eastereggactive) {
+            API.getService().toot(getIntent().getStringExtra("channel")).enqueue(new Callback<JsonElement>() {
+                @Override
+                public void onResponse(Call<JsonElement> call, retrofit2.Response<JsonElement> response) {
 
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, (String) null, new Response.Listener<JSONObject>() {
+                }
 
-            @Override
-            public void onResponse(JSONObject response) {
-                //getActionBar().setTitle("Response: " + response.toString());
-            }
-        }, new Response.ErrorListener() {
+                @Override
+                public void onFailure(Call<JsonElement> call, Throwable t) {
 
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        queue.add(req);
+                }
+            });
+        }
     }
 
     @OnClick(R.id.tv_upcoming)
@@ -497,6 +367,11 @@ public class PlayerActivity extends YouTubeBaseActivity implements YouTubePlayer
 
     @OnClick(R.id.tv_add_video)
     public void addVideoClicked(View v){
+        if (easteregg == 2 || easteregg == 3){
+            easteregg++;
+        } else {
+            easteregg = 0;
+        }
         lv_upcoming.setVisibility(View.GONE);
         ll_search.setVisibility(View.VISIBLE);
         searchInput.setText("");
